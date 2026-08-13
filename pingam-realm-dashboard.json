@@ -166,7 +166,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "round(sum(rate(am_authentication_count{realm=~\"$realm\"}[$__rate_interval])) * 60, 0.01)",
+          "expr": "round(sum(rate(am_authentication_count[$__rate_interval])) * 60, 0.01)",
           "instant": true,
           "legendFormat": "Auth req/min",
           "refId": "A"
@@ -235,7 +235,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(am_authentication_count{realm=~\"$realm\", outcome=\"success\"}[$__rate_interval])) / sum(rate(am_authentication_count{realm=~\"$realm\"}[$__rate_interval])) * 100",
+          "expr": "sum(rate(am_authentication_count{outcome=\"success\"}[$__rate_interval])) / sum(rate(am_authentication_count[$__rate_interval])) * 100",
           "instant": true,
           "legendFormat": "Success %",
           "refId": "A"
@@ -249,7 +249,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Total number of active (valid) sessions in the realm.",
+      "description": "Rate of new sessions being created per minute. PingAM does not expose an active-session gauge via Prometheus; use am_session_count{operation='create'} as a proxy for session load.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -265,7 +265,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "reqpm"
         },
         "overrides": []
       },
@@ -296,13 +296,13 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(am_sessions_statistic{realm=~\"$realm\", statistic=\"activeSessions\"})",
+          "expr": "round(sum(rate(am_session_count{operation=\"create\"}[$__rate_interval])) * 60, 0.01)",
           "instant": true,
-          "legendFormat": "Active sessions",
+          "legendFormat": "New sessions/min",
           "refId": "A"
         }
       ],
-      "title": "Active Sessions",
+      "title": "New Sessions / min",
       "type": "stat"
     },
     {
@@ -357,7 +357,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "round(sum(rate(am_oauth2_count{realm=~\"$realm\"}[$__rate_interval])) * 60, 0.01)",
+          "expr": "round(sum(rate(am_oauth2_token_issue_count[$__rate_interval])) * 60, 0.01)",
           "instant": true,
           "legendFormat": "Tokens/min",
           "refId": "A"
@@ -463,6 +463,21 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "\u23f1 Timeout"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -495,7 +510,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(am_authentication_count{realm=~\"$realm\", outcome=\"success\"}[$__rate_interval]))",
+          "expr": "sum(rate(am_authentication_count{outcome=\"success\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "\u2705 Success",
           "refId": "A"
@@ -505,10 +520,20 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(am_authentication_count{realm=~\"$realm\", outcome=\"failure\"}[$__rate_interval]))",
+          "expr": "sum(rate(am_authentication_count{outcome=\"failure\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "\u274c Failure",
           "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "sum(rate(am_authentication_count{outcome=\"timeout\"}[$__rate_interval]))",
+          "instant": false,
+          "legendFormat": "\u23f1 Timeout",
+          "refId": "C"
         }
       ],
       "title": "Authentication Requests by Outcome",
@@ -576,7 +601,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(am_authentication_count{realm=~\"$realm\", outcome=\"success\"}[$__rate_interval])) / sum(rate(am_authentication_count{realm=~\"$realm\"}[$__rate_interval])) * 100",
+          "expr": "sum(rate(am_authentication_count{outcome=\"success\"}[$__rate_interval])) / sum(rate(am_authentication_count[$__rate_interval])) * 100",
           "instant": true,
           "legendFormat": "Success Rate %",
           "refId": "A"
@@ -702,7 +727,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "am_authentication{realm=~\"$realm\", quantile=\"0.5\"}",
+          "expr": "am_authentication{quantile=\"0.5\"}",
           "instant": false,
           "legendFormat": "P50",
           "refId": "A"
@@ -712,7 +737,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "am_authentication{realm=~\"$realm\", quantile=\"0.95\"}",
+          "expr": "am_authentication{quantile=\"0.95\"}",
           "instant": false,
           "legendFormat": "P95",
           "refId": "B"
@@ -722,7 +747,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "am_authentication{realm=~\"$realm\", quantile=\"0.99\"}",
+          "expr": "am_authentication{quantile=\"0.99\"}",
           "instant": false,
           "legendFormat": "P99",
           "refId": "C"
@@ -817,7 +842,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "topk(5, sum by (node) (rate(am_trees_nodeExecution_count{realm=~\"$realm\"}[$__rate_interval])))",
+          "expr": "topk(5, sum by (node) (rate(am_trees_nodeExecution_count[$__rate_interval])))",
           "instant": false,
           "legendFormat": "{{node}}",
           "refId": "A"
@@ -843,7 +868,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Number of active (valid) sessions in the realm over time.",
+      "description": "Rate of session create and destroy operations. PingAM does not expose an active-session count gauge via Prometheus; this chart shows throughput via am_session_count{operation=...}.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -897,13 +922,28 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Active sessions"
+              "options": "Create"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "blue",
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Destroy"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
                   "mode": "fixed"
                 }
               }
@@ -940,13 +980,23 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(am_sessions_statistic{realm=~\"$realm\", statistic=\"activeSessions\"})",
+          "expr": "sum(rate(am_session_count{operation=\"create\"}[$__rate_interval]))",
           "instant": false,
-          "legendFormat": "Active sessions",
+          "legendFormat": "Create",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "sum(rate(am_session_count{operation=\"destroy\"}[$__rate_interval]))",
+          "instant": false,
+          "legendFormat": "Destroy",
+          "refId": "B"
         }
       ],
-      "title": "Active Sessions",
+      "title": "Session Operation Rates",
       "type": "timeseries"
     },
     {
@@ -954,7 +1004,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Rate of sessions being created, destroyed (logout), or expired due to idle / max timeout. Source: am_sessions_statistic with lifecycle statistic labels.",
+      "description": "Session operation rates from am_session_count. Confirmed operation label values: create, check-exists, add-pll-listener, destroy. Values for 'timeout' and 'rejected' may differ in your deployment \u2014 run `curl .../metrics/prometheus | grep am_session_count` to see exact operation values.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1096,7 +1146,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(am_sessions_statistic{realm=~\"$realm\", statistic=\"sessionsCreated\"}[$__rate_interval]))",
+          "expr": "sum(rate(am_session_count{operation=\"create\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "Created",
           "refId": "A"
@@ -1106,7 +1156,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(am_sessions_statistic{realm=~\"$realm\", statistic=\"sessionsDestroyed\"}[$__rate_interval]))",
+          "expr": "sum(rate(am_session_count{operation=\"destroy\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "Destroyed (logout)",
           "refId": "B"
@@ -1116,7 +1166,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(am_sessions_statistic{realm=~\"$realm\", statistic=\"sessionsTimedOut\"}[$__rate_interval]))",
+          "expr": "sum(rate(am_session_count{operation=\"timeout\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "Timed out",
           "refId": "C"
@@ -1126,10 +1176,20 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(am_sessions_statistic{realm=~\"$realm\", statistic=\"sessionsRejected\"}[$__rate_interval]))",
+          "expr": "sum(rate(am_session_count{operation=\"rejected\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "Rejected (quota)",
           "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "sum(rate(am_session_count{operation=\"check-exists\"}[$__rate_interval]))",
+          "instant": false,
+          "legendFormat": "Check-exists (validation)",
+          "refId": "E"
         }
       ],
       "title": "Session Lifecycle Rate",
@@ -1152,7 +1212,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Rate of OAuth2 access tokens granted, broken down by grant type. Source: am_oauth2_count (Summary) with grant_type label.",
+      "description": "Rate of OAuth2 grants completed by grant type. Source: am_oauth2_grant_count with grant_type label (authorization_code, client_credentials, refresh_token, urn:ietf:params:oauth:grant-type:device_code, etc.).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1233,7 +1293,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum by (grant_type) (rate(am_oauth2_count{realm=~\"$realm\"}[$__rate_interval]))",
+          "expr": "sum by (grant_type) (rate(am_oauth2_grant_count[$__rate_interval]))",
           "instant": false,
           "legendFormat": "{{grant_type}}",
           "refId": "A"
@@ -1247,7 +1307,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Total number of active OAuth2 access tokens currently in the realm.",
+      "description": "OAuth2 access tokens issued in the selected time window (am_oauth2_token_issue_count{token_type='access_token'}). Note: PingAM does not expose a live active-token count via Prometheus.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1294,13 +1354,13 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(am_oauth2_accessToken_count{realm=~\"$realm\"})",
+          "expr": "sum(increase(am_oauth2_token_issue_count{token_type=\"access_token\"}[$__range]))",
           "instant": true,
-          "legendFormat": "Active tokens",
+          "legendFormat": "Access tokens issued",
           "refId": "A"
         }
       ],
-      "title": "Active Access Tokens",
+      "title": "Access Tokens Issued",
       "type": "stat"
     },
     {
@@ -1308,7 +1368,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Total number of active OAuth2 refresh tokens in the realm.",
+      "description": "OAuth2 refresh tokens issued in the selected time window (am_oauth2_token_issue_count{token_type='refresh_token'}).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1355,13 +1415,13 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(am_oauth2_refreshToken_count{realm=~\"$realm\"})",
+          "expr": "sum(increase(am_oauth2_token_issue_count{token_type=\"refresh_token\"}[$__range]))",
           "instant": true,
-          "legendFormat": "Refresh tokens",
+          "legendFormat": "Refresh tokens issued",
           "refId": "A"
         }
       ],
-      "title": "Active Refresh Tokens",
+      "title": "Refresh Tokens Issued",
       "type": "stat"
     },
     {
@@ -1415,7 +1475,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum by (grant_type) (increase(am_oauth2_count{realm=~\"$realm\"}[$__range]))",
+          "expr": "sum by (grant_type) (increase(am_oauth2_grant_count[$__range]))",
           "instant": false,
           "legendFormat": "{{grant_type}}",
           "refId": "A"
@@ -1429,7 +1489,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Rate of token introspection and revocation requests.",
+      "description": "Rate of token and grant revocations. am_oauth2_token_revoke_count and am_oauth2_grant_revoke_count are confirmed metrics. am_oauth2_introspect_count is unconfirmed \u2014 remove if it returns no data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1510,9 +1570,9 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(am_oauth2_introspect_count{realm=~\"$realm\"}[$__rate_interval]))",
+          "expr": "sum by (token_type) (rate(am_oauth2_token_revoke_count[$__rate_interval]))",
           "instant": false,
-          "legendFormat": "Introspection",
+          "legendFormat": "Token revoked ({{token_type}})",
           "refId": "A"
         },
         {
@@ -1520,9 +1580,9 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(am_oauth2_revoke_count{realm=~\"$realm\"}[$__rate_interval]))",
+          "expr": "sum by (grant_type) (rate(am_oauth2_grant_revoke_count[$__rate_interval]))",
           "instant": false,
-          "legendFormat": "Revocation",
+          "legendFormat": "Grant revoked ({{grant_type}})",
           "refId": "B"
         },
         {
@@ -1530,13 +1590,13 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum(rate(am_oauth2_userinfo_count{realm=~\"$realm\"}[$__rate_interval]))",
+          "expr": "sum(rate(am_oauth2_introspect_count[$__rate_interval]))",
           "instant": false,
-          "legendFormat": "UserInfo",
+          "legendFormat": "Introspection (\u26a0 unconfirmed metric)",
           "refId": "C"
         }
       ],
-      "title": "Token Introspection & Revocation Rate",
+      "title": "Token Revocation & Grant Revocation Rate",
       "type": "timeseries"
     },
     {
@@ -1546,6 +1606,289 @@
         "w": 24,
         "x": 0,
         "y": 49
+      },
+      "id": 27,
+      "title": "\ud83d\uddc4\ufe0f Core Token Service (CTS)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Rate of Core Token Service (CTS) operations by type. CTS stores AM sessions, OAuth2 tokens, and SAML assertions. High create/delete rates correlate with session and token activity.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 0,
+        "y": 50
+      },
+      "id": 28,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "sum by (operation) (rate(am_cts_task_count[$__rate_interval]))",
+          "instant": false,
+          "legendFormat": "{{operation}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CTS Task Rate by Operation",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Number of CTS operations currently waiting in the task queue (am_cts_task_queue_size). This is a live gauge \u2014 elevated values indicate CTS backpressure or LDAP store latency.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "background"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 50
+      },
+      "id": 29,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "sum(am_cts_task_queue_size)",
+          "instant": true,
+          "legendFormat": "Queue depth",
+          "refId": "A"
+        }
+      ],
+      "title": "CTS Queue Depth",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 58
+      },
+      "id": 30,
+      "title": "\ud83d\udee1\ufe0f Policy Evaluation",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Rate of authorization policy evaluations by policy set type (am_authorization_policy_set_evaluate_count). Spikes may indicate heavy PEP load or misconfigured resource servers.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 59
+      },
+      "id": 31,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "sum by (policy_type) (rate(am_authorization_policy_set_evaluate_count[$__rate_interval]))",
+          "instant": false,
+          "legendFormat": "{{policy_type}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Policy Evaluation Rate by Policy Set",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 67
       },
       "id": 20,
       "title": "\ud83d\udccb Audit Logs (Elasticsearch)",
@@ -1561,7 +1904,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 50
+        "y": 68
       },
       "id": 21,
       "options": {
@@ -1594,7 +1937,7 @@
           ],
           "query": "component:AUTHENTICATION AND realm:\"$realm\"",
           "refId": "A",
-          "timeField": "@timestamp"
+          "timeField": "timestamp"
         }
       ],
       "title": "Recent Authentication Events",
@@ -1661,7 +2004,7 @@
         "h": 9,
         "w": 14,
         "x": 0,
-        "y": 62
+        "y": 80
       },
       "id": 22,
       "options": {
@@ -1683,7 +2026,7 @@
           "alias": "{{component}} \u2014 {{result}}",
           "bucketAggs": [
             {
-              "field": "@timestamp",
+              "field": "timestamp",
               "id": "3",
               "settings": {
                 "interval": "auto",
@@ -1716,7 +2059,7 @@
           ],
           "query": "realm:\"$realm\" AND (component:AUTHENTICATION OR component:OAUTH2 OR component:SESSION OR component:ACCESS)",
           "refId": "A",
-          "timeField": "@timestamp"
+          "timeField": "timestamp"
         }
       ],
       "title": "Audit Event Volume by Component & Result",
@@ -1757,7 +2100,7 @@
         "h": 9,
         "w": 10,
         "x": 14,
-        "y": 62
+        "y": 80
       },
       "id": 23,
       "options": {
@@ -1800,7 +2143,7 @@
           ],
           "query": "component:AUTHENTICATION AND result:FAILED AND realm:\"$realm\"",
           "refId": "A",
-          "timeField": "@timestamp"
+          "timeField": "timestamp"
         }
       ],
       "title": "Auth Failure Breakdown (by principal)",
@@ -1841,7 +2184,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 71
+        "y": 89
       },
       "id": 24,
       "options": {
@@ -1895,7 +2238,7 @@
           ],
           "query": "component:OAUTH2 AND realm:\"$realm\"",
           "refId": "A",
-          "timeField": "@timestamp"
+          "timeField": "timestamp"
         }
       ],
       "title": "OAuth2 Audit Events (by eventName)",
@@ -1936,7 +2279,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 71
+        "y": 89
       },
       "id": 25,
       "options": {
@@ -1979,7 +2322,7 @@
           ],
           "query": "component:SESSION AND realm:\"$realm\"",
           "refId": "A",
-          "timeField": "@timestamp"
+          "timeField": "timestamp"
         }
       ],
       "title": "Session Audit Events (by eventName)",
@@ -1990,7 +2333,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 79
+        "y": 97
       },
       "id": 26,
       "options": {
@@ -1999,7 +2342,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "## \ud83d\udcd6 About This Dashboard\n\n**Data sources**\n| Source | Covers | Endpoint |\n|--------|--------|----------|\n| Prometheus | Auth metrics, Sessions, OAuth2 counters & latency | `/openam/json/metrics/prometheus` (AM 6/7/8) |\n| Elasticsearch | Audit log events (auth, session, OAuth2, access) | Your PingAM audit index |\n\n---\n\n### \ud83d\udd27 Metric Name Quick-Start\n\nPingAM exposes metrics as **Micrometer Summaries**. Use `label_values()` or Prometheus `/api/v1/label/__name__/values` to discover your exact names.\n\n| What | Likely metric name | Key labels |\n|------|--------------------|-----------|\n| Auth attempts | `am_authentication_count` | `outcome` (success/failure), `realm` |\n| Auth latency | `am_authentication` (quantile) | `quantile`, `realm` |\n| Active sessions | `am_sessions_statistic` | `statistic` (activeSessions), `realm` |\n| Session events | `am_sessions_statistic` | `statistic` (sessionsCreated/Destroyed/TimedOut) |\n| OAuth2 grants | `am_oauth2_count` | `grant_type`, `realm` |\n| OAuth2 tokens (active) | `am_oauth2_accessToken_count` | `realm` |\n| Tree node exec | `am_trees_nodeExecution_count` | `tree`, `node`, `realm` |\n\n> **Tip:** Run `curl -s https://<am-host>/openam/json/metrics/prometheus | grep '^am_'` to list all exposed metric names in your environment.\n\n---\n\n### \ud83d\uddc2\ufe0f Elasticsearch Audit Log Fields\n\n| Field | Example value | Notes |\n|-------|---------------|-------|\n| `@timestamp` | `2026-08-11T10:00:00Z` | Time of event |\n| `component` | `AUTHENTICATION`, `OAUTH2`, `SESSION`, `ACCESS` | Audit category |\n| `eventName` | `AM-AUTH-LOGIN-COMPLETED` | Specific event identifier |\n| `realm` | `/alpha` | Realm path |\n| `result` | `SUCCESSFUL`, `FAILED` | Outcome |\n| `principal` | `user@example.com` | Acting principal |\n| `transactionId` | `abc-123` | Links related events |\n\nAdjust the `$es_index` variable to match your index pattern (default: `pingam-audit-*`).\n",
+        "content": "## \ud83d\udcd6 About This Dashboard\n\n**Data sources**\n| Source | Covers | Endpoint |\n|--------|--------|----------|\n| Prometheus | Auth, Sessions, OAuth2, CTS, Policy | `/openam/json/metrics/prometheus` (AM 6/7) \u00b7 `/metrics/prometheus` (AM 8+) |\n| Elasticsearch | Audit log events | Your PingAM audit index (`timestamp` field) |\n\n---\n\n### \u2705 Confirmed Prometheus Metric Names (PingAM 8 / PingOne Advanced Identity Cloud)\n\n| Metric | Label | Values | Description |\n|--------|-------|--------|-------------|\n| `am_authentication_count` | `outcome` | `success`, `failure`, `timeout` | Auth attempts |\n| `am_authentication` | `quantile` | 0.5, 0.75, 0.95, 0.99 | Auth latency (Summary) |\n| `am_session_count` | `operation` | `create`, `check-exists`, `destroy`, `add-pll-listener` | Session ops |\n| `am_session_seconds` | `operation`, `quantile` | \u2014 | Session op latency |\n| `am_cts_task_count` | `operation` | `create`, `read`, `delete`, \u2026 | CTS task ops |\n| `am_cts_task_queue_size` | \u2014 | \u2014 | **Gauge**: CTS queue backlog |\n| `am_cts_task_seconds` | `operation`, `quantile` | \u2014 | CTS task latency |\n| `am_oauth2_grant_count` | `grant_type` | authorization_code, client_credentials, refresh_token, \u2026 | Grant completions |\n| `am_oauth2_grant_revoke_count` | `grant_type` | \u2014 | Grant revocations |\n| `am_oauth2_token_issue_count` | `token_type` | `access_token`, `refresh_token`, `id_token` | Token issuances |\n| `am_oauth2_token_revoke_count` | `token_type` | \u2014 | Token revocations |\n| `am_authorization_policy_set_evaluate_count` | `policy_type` | \u2014 | Policy eval calls |\n\n> **Active session count**: PingAM does not expose an active-session gauge via Prometheus.\n> This dashboard uses `am_session_count{operation=\"create\"}` as a throughput proxy.\n\n---\n\n### \u26a0\ufe0f Unconfirmed Metrics (verify against your scrape output)\n\n| Metric | Used in | Notes |\n|--------|---------|-------|\n| `am_trees_nodeExecution_count` | Auth Tree Node panel | May not exist; remove if no data |\n| `am_oauth2_introspect_count` | Revocation panel | Not in official docs; remove if no data |\n\nRun this to see exactly what your PingAM exposes:\n```bash\ncurl -s https://<am-host>/openam/json/metrics/prometheus | grep '^am_' | sort -u\n```\n\n---\n\n### \ud83d\uddc2\ufe0f Elasticsearch Audit Fields\n\n| Field | Example | Notes |\n|-------|---------|-------|\n| `timestamp` | `2026-08-11T10:00:00Z` | Time field (not @timestamp) |\n| `component` | `AUTHENTICATION`, `OAUTH2`, `SESSION`, `ACCESS` | Audit category |\n| `eventName` | `AM-AUTH-LOGIN-COMPLETED` | Event identifier |\n| `realm` | `/alpha` | Realm path |\n| `result` | `SUCCESSFUL`, `FAILED` | Outcome |\n| `principal` | `user@example.com` | Acting principal |\n",
         "mode": "markdown"
       },
       "title": "\ud83d\udcd6 About This Dashboard",
@@ -2024,7 +2367,7 @@
           "text": "/alpha",
           "value": "/alpha"
         },
-        "description": "PingAM realm path (e.g. / for root, /alpha, /bravo). Must match the realm label in Prometheus and Elasticsearch.",
+        "description": "PingAM realm path (e.g. / for root, /alpha, /bravo). Used to filter Elasticsearch audit log queries.",
         "hide": 0,
         "includeAll": false,
         "label": "Realm",
